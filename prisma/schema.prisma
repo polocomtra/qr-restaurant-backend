@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Tenant {
+  id        String     @id @default(uuid())
+  name      String
+  slug      String     @unique // Identify restaurant in URL
+  password  String     // Simple auth for MVP
+  createdAt DateTime   @default(now())
+  categories Category[]
+  products   Product[]
+  orders     Order[]
+  tables     Table[]
+}
+
+model Table {
+  id        String   @id @default(uuid())
+  name      String   // e.g., "Table 1"
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model Category {
+  id        String    @id @default(uuid())
+  name      String
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  products  Product[]
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  price       Int
+  imageUrl    String?  // Cloudinary URL
+  isAvailable Boolean  @default(true)
+  categoryId  String
+  tenantId    String   // Direct link for easier querying
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id        String      @id @default(uuid())
+  tenantId  String
+  tableName String      // Snapshot of table name
+  status    String      // PENDING, CONFIRMED, DONE, CANCELLED
+  total     Int
+  items     OrderItem[]
+  createdAt DateTime    @default(now())
+  tenant    Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model OrderItem {
+  id          String @id @default(uuid())
+  orderId     String
+  order       Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productName String
+  quantity    Int
+  price       Int
+  note        String?
+}
+

@@ -5,18 +5,21 @@ This guide covers different ways to test the QR Restaurant Backend API.
 ## Prerequisites
 
 1. **Start the server:**
-   ```bash
-   npm run dev
-   ```
+
+    ```bash
+    npm run dev
+    ```
 
 2. **Ensure database is seeded:**
-   ```bash
-   npm run prisma:seed
-   ```
 
-   This creates:
-   - Tenant: `pho-test` (password: `123`)
-   - 3 tables, 3 categories, 5 products
+    ```bash
+    npm run prisma:seed
+    ```
+
+    This creates:
+
+    - Tenant: `pho-test` (password: `123`)
+    - 3 tables, 3 categories, 5 products
 
 ## Testing Methods
 
@@ -25,12 +28,14 @@ This guide covers different ways to test the QR Restaurant Backend API.
 Visit: `http://localhost:3001/docs`
 
 **Advantages:**
-- Interactive UI
-- See all endpoints
-- Try requests directly
-- View request/response schemas
+
+-   Interactive UI
+-   See all endpoints
+-   Try requests directly
+-   View request/response schemas
 
 **Steps:**
+
 1. Open `http://localhost:3001/docs` in your browser
 2. Expand any endpoint
 3. Click "Try it out"
@@ -41,16 +46,19 @@ Visit: `http://localhost:3001/docs`
 ### 2. Using curl Commands
 
 #### Health Check
+
 ```bash
 curl http://localhost:3001/health
 ```
 
 #### Get Store Menu (Public)
+
 ```bash
 curl http://localhost:3001/api/store/pho-test
 ```
 
 #### Login (Get Tenant ID)
+
 ```bash
 curl -X POST http://localhost:3001/api/auth/login \
   -H "Content-Type: application/json" \
@@ -60,6 +68,7 @@ curl -X POST http://localhost:3001/api/auth/login \
 **Save the `tenantId` from response for authenticated requests!**
 
 #### Create Order (Public)
+
 ```bash
 # First, get tenantId and productId from login/store endpoints
 curl -X POST http://localhost:3001/api/orders \
@@ -80,6 +89,7 @@ curl -X POST http://localhost:3001/api/orders \
 ```
 
 #### Create Product (Requires Auth)
+
 ```bash
 # Replace YOUR_TENANT_ID with actual tenantId from login
 curl -X POST http://localhost:3001/api/products \
@@ -94,6 +104,7 @@ curl -X POST http://localhost:3001/api/products \
 ```
 
 #### Update Order Status (Requires Auth)
+
 ```bash
 # Replace ORDER_ID and YOUR_TENANT_ID
 curl -X PUT http://localhost:3001/api/orders/ORDER_ID/status \
@@ -103,6 +114,7 @@ curl -X PUT http://localhost:3001/api/orders/ORDER_ID/status \
 ```
 
 #### Create Table (Requires Auth)
+
 ```bash
 curl -X POST http://localhost:3001/api/tables \
   -H "Content-Type: application/json" \
@@ -113,19 +125,21 @@ curl -X POST http://localhost:3001/api/tables \
 ### 3. Using Postman/Insomnia
 
 1. **Import Collection:**
-   - Create a new collection
-   - Add requests for each endpoint
-   - Set base URL: `http://localhost:3001`
+
+    - Create a new collection
+    - Add requests for each endpoint
+    - Set base URL: `http://localhost:3001`
 
 2. **Environment Variables:**
-   - `baseUrl`: `http://localhost:3001`
-   - `tenantId`: (set after login)
-   - `orderId`: (set after creating order)
+
+    - `baseUrl`: `http://localhost:3001`
+    - `tenantId`: (set after login)
+    - `orderId`: (set after creating order)
 
 3. **Authentication:**
-   - For private endpoints, add header:
-     - Key: `x-tenant-id`
-     - Value: `{{tenantId}}`
+    - For private endpoints, add header:
+        - Key: `x-tenant-id`
+        - Value: `{{tenantId}}`
 
 ### 4. Testing Socket.io Events
 
@@ -134,24 +148,24 @@ curl -X POST http://localhost:3001/api/tables \
 Create a test file `test-socket.js`:
 
 ```javascript
-const io = require('socket.io-client');
+const io = require("socket.io-client");
 
-const socket = io('http://localhost:3001');
+const socket = io("http://localhost:3001");
 
-socket.on('connect', () => {
-  console.log('Connected to server');
-  
-  // Join tenant room (replace with actual tenantId)
-  socket.emit('join_room', 'YOUR_TENANT_ID');
-  console.log('Joined tenant room');
+socket.on("connect", () => {
+    console.log("Connected to server");
+
+    // Join tenant room (replace with actual tenantId)
+    socket.emit("join_room", "YOUR_TENANT_ID");
+    console.log("Joined tenant room");
 });
 
-socket.on('new_order', (order) => {
-  console.log('New order received:', order);
+socket.on("new_order", (order) => {
+    console.log("New order received:", order);
 });
 
-socket.on('disconnect', () => {
-  console.log('Disconnected from server');
+socket.on("disconnect", () => {
+    console.log("Disconnected from server");
 });
 ```
 
@@ -160,21 +174,22 @@ Run: `node test-socket.js`
 #### Using Browser Console
 
 ```javascript
-const socket = io('http://localhost:3001');
+const socket = io("http://localhost:3001");
 
-socket.on('connect', () => {
-  console.log('Connected');
-  socket.emit('join_room', 'YOUR_TENANT_ID');
+socket.on("connect", () => {
+    console.log("Connected");
+    socket.emit("join_room", "YOUR_TENANT_ID");
 });
 
-socket.on('new_order', (order) => {
-  console.log('New order:', order);
+socket.on("new_order", (order) => {
+    console.log("New order:", order);
 });
 ```
 
 ## Complete Test Flow
 
 ### Step 1: Get Tenant ID
+
 ```bash
 # Login to get tenantId
 curl -X POST http://localhost:3001/api/auth/login \
@@ -183,12 +198,14 @@ curl -X POST http://localhost:3001/api/auth/login \
 ```
 
 ### Step 2: Get Store Menu
+
 ```bash
 # View available products
 curl http://localhost:3001/api/store/pho-test
 ```
 
 ### Step 3: Create an Order
+
 ```bash
 # Create order (use tenantId and productId from previous steps)
 curl -X POST http://localhost:3001/api/orders \
@@ -210,6 +227,7 @@ curl -X POST http://localhost:3001/api/orders \
 **Note:** This should trigger a Socket.io `new_order` event if you're listening!
 
 ### Step 4: Update Order Status
+
 ```bash
 # Update order status (use orderId from Step 3)
 curl -X PUT http://localhost:3001/api/orders/ORDER_ID/status \
@@ -220,43 +238,47 @@ curl -X PUT http://localhost:3001/api/orders/ORDER_ID/status \
 
 ## Testing Checklist
 
-- [ ] Health check endpoint works
-- [ ] Get store menu by slug
-- [ ] Login with valid credentials
-- [ ] Login with invalid credentials (should fail)
-- [ ] Create order (public endpoint)
-- [ ] Create product (requires auth)
-- [ ] Update product (requires auth)
-- [ ] Create table (requires auth)
-- [ ] Update order status (requires auth)
-- [ ] Socket.io connection works
-- [ ] Socket.io `join_room` event works
-- [ ] Socket.io `new_order` event is received when order is created
-- [ ] Error handling (404, 400, 401, 500)
+-   [ ] Health check endpoint works
+-   [ ] Get store menu by slug
+-   [ ] Login with valid credentials
+-   [ ] Login with invalid credentials (should fail)
+-   [ ] Create order (public endpoint)
+-   [ ] Create product (requires auth)
+-   [ ] Update product (requires auth)
+-   [ ] Create table (requires auth)
+-   [ ] Update order status (requires auth)
+-   [ ] Socket.io connection works
+-   [ ] Socket.io `join_room` event works
+-   [ ] Socket.io `new_order` event is received when order is created
+-   [ ] Error handling (404, 400, 401, 500)
 
 ## Common Issues
 
 ### "Cannot GET /"
-- ✅ Fixed: Root endpoint now returns API info
+
+-   ✅ Fixed: Root endpoint now returns API info
 
 ### "Restaurant not found"
-- Check if database is seeded: `npm run prisma:seed`
-- Verify slug is correct: `pho-test`
+
+-   Check if database is seeded: `npm run prisma:seed`
+-   Verify slug is correct: `pho-test`
 
 ### "Unauthorized" errors
-- Ensure `x-tenant-id` header is set
-- Get tenantId from login endpoint first
-- Verify tenantId is correct UUID
+
+-   Ensure `x-tenant-id` header is set
+-   Get tenantId from login endpoint first
+-   Verify tenantId is correct UUID
 
 ### Socket.io not connecting
-- Check CORS settings in `src/index.ts`
-- Verify server is running
-- Check browser console for errors
+
+-   Check CORS settings in `src/index.ts`
+-   Verify server is running
+-   Check browser console for errors
 
 ## Next Steps
 
 For automated testing, consider setting up:
-- Jest for unit tests
-- Supertest for API integration tests
-- Test database for isolated testing
 
+-   Jest for unit tests
+-   Supertest for API integration tests
+-   Test database for isolated testing

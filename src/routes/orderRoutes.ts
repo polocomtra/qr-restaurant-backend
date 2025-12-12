@@ -1,5 +1,9 @@
 import { Router } from "express";
-import { createOrder, updateOrderStatus } from "../controllers/orderController";
+import {
+    createOrder,
+    updateOrderStatus,
+    getOrders,
+} from "../controllers/orderController";
 import { authenticateTenant } from "../middleware/auth";
 
 const router = Router();
@@ -44,6 +48,39 @@ const router = Router();
  *               $ref: '#/components/schemas/Error'
  */
 router.post("/", createOrder);
+
+/**
+ * @swagger
+ * /api/orders:
+ *   get:
+ *     summary: Get all orders for a tenant
+ *     description: Retrieve all orders for the authenticated tenant. Requires tenant authentication.
+ *     tags: [Orders]
+ *     security:
+ *       - tenantAuth: []
+ *     responses:
+ *       200:
+ *         description: List of orders
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Order'
+ *       401:
+ *         description: Unauthorized - Missing or invalid tenant ID
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get("/", authenticateTenant, getOrders);
 
 /**
  * @swagger

@@ -10,6 +10,7 @@ import orderRoutes from "./routes/orderRoutes";
 import authRoutes from "./routes/authRoutes";
 import productRoutes from "./routes/productRoutes";
 import tableRoutes from "./routes/tableRoutes";
+import categoryRoutes from "./routes/categoryRoutes";
 import { setSocketIO } from "./controllers/orderController";
 
 // Load environment variables
@@ -81,6 +82,7 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/tables", tableRoutes);
+app.use("/api/categories", categoryRoutes);
 
 // Set socket.io instance for order controller
 setSocketIO(io);

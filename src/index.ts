@@ -52,6 +52,9 @@ app.get("/", (req, res) => {
             public: {
                 "GET /api/store/:slug": "Get restaurant menu",
                 "POST /api/orders": "Create a new order",
+                "GET /api/orders/:id": "Get order by ID (for guests)",
+                "POST /api/orders/:id/items":
+                    "Add items to existing order (for guests)",
                 "GET /api/tables/:id": "Get table by ID (for guests)",
             },
             private: {
@@ -60,6 +63,8 @@ app.get("/", (req, res) => {
                 "PUT /api/products/:id": "Update product",
                 "GET /api/tables": "Get all tables",
                 "POST /api/tables": "Create table",
+                "POST /api/tables/:id/pay":
+                    "Mark table as paid (reset for next customer)",
                 "PUT /api/orders/:id/status": "Update order status",
             },
         },
@@ -67,6 +72,9 @@ app.get("/", (req, res) => {
             events: {
                 join_room: "Join tenant room for order notifications",
                 new_order: "Receive new order notifications",
+                order_updated: "Receive order status updates",
+                table_paid:
+                    "Receive table paid notification (clear localStorage)",
             },
         },
     });
@@ -95,8 +103,10 @@ app.use("/api/products", productRoutes);
 app.use("/api/tables", tableRoutes);
 app.use("/api/categories", categoryRoutes);
 
-// Set socket.io instance for order controller
+// Set socket.io instance for controllers
+import { setSocketIO as setTableSocketIO } from "./routes/tableRoutes";
 setSocketIO(io);
+setTableSocketIO(io);
 
 // Socket.io connection handling
 io.on("connection", (socket) => {

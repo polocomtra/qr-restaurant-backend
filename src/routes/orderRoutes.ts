@@ -3,6 +3,8 @@ import {
     createOrder,
     updateOrderStatus,
     getOrders,
+    getOrderById,
+    addItemsToOrder,
 } from "../controllers/orderController";
 import { authenticateTenant } from "../middleware/auth";
 
@@ -48,6 +50,98 @@ const router = Router();
  *               $ref: '#/components/schemas/Error'
  */
 router.post("/", createOrder);
+
+/**
+ * @swagger
+ * /api/orders/{id}:
+ *   get:
+ *     summary: Get order by ID
+ *     description: Retrieve order information by ID. Public endpoint for guests to track their order.
+ *     tags: [Orders]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Order ID
+ *     responses:
+ *       200:
+ *         description: Order information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Order'
+ *       404:
+ *         description: Order not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+/**
+ * @swagger
+ * /api/orders/{id}/items:
+ *   post:
+ *     summary: Add items to existing order
+ *     description: Add more items to a pending order. Public endpoint for guests.
+ *     tags: [Orders]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Order ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - items
+ *               - additionalTotal
+ *             properties:
+ *               items:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     productId:
+ *                       type: string
+ *                     quantity:
+ *                       type: number
+ *                     price:
+ *                       type: number
+ *                     note:
+ *                       type: string
+ *               additionalTotal:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: Order updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Order'
+ *       400:
+ *         description: Invalid request or order not pending
+ *       404:
+ *         description: Order not found
+ *       500:
+ *         description: Server error
+ */
+router.post("/:id/items", addItemsToOrder);
+router.get("/:id", getOrderById);
 
 /**
  * @swagger

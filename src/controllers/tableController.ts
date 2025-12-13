@@ -1,5 +1,13 @@
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
+import { Server as SocketIOServer } from "socket.io";
+
+// Store socket.io instance (will be set from index.ts)
+let io: SocketIOServer | null = null;
+
+export function setSocketIO(server: SocketIOServer) {
+    io = server;
+}
 
 /**
  * Get all tables for the authenticated tenant
@@ -74,5 +82,52 @@ export async function createTable(req: Request, res: Response) {
     } catch (error) {
         console.error("Error creating table:", error);
         res.status(500).json({ error: "Failed to create table" });
+    }
+}
+
+/**
+ * Mark table as paid and reset for next customer
+ * Private endpoint for merchants
+ * This will emit a socket event to clear user's localStorage
+ */
+export async function markTableAsPaid(req: Request, res: Response) {
+    try {
+        const { id } = req.params;
+        const tenant = (req as any).tenant;
+
+        // Find table and verify it belongs to the tenant
+        const table = await prisma.table.findFirst({
+            where: {
+                id,
+                tenantId: tenant.id,
+            },
+        });
+
+        if (!table) {
+            return res.status(404).json({ error: "Table not found" });
+        }
+
+        // Emit socket event to all clients in tenant's room
+        // This will notify all users (including guests) to clear their localStorage
+        // if they are currently using this table
+        if (io) {
+            io.to(tenant.id).emit("table_paid", {
+                tableId: id,
+                tableName: table.name,
+                tenantId: tenant.id,
+            });
+            console.log(
+                `Table ${table.name} (${id}) marked as paid. Emitting table_paid event.`
+            );
+        }
+
+        res.json({
+            success: true,
+            message: `Table ${table.name} has been marked as paid`,
+            tableId: id,
+        });
+    } catch (error) {
+        console.error("Error marking table as paid:", error);
+        res.status(500).json({ error: "Failed to mark table as paid" });
     }
 }

@@ -1,5 +1,9 @@
 import { Router } from "express";
-import { createTable } from "../controllers/tableController";
+import {
+    getTables,
+    createTable,
+    getTableById,
+} from "../controllers/tableController";
 import { authenticateTenant } from "../middleware/auth";
 
 const router = Router();
@@ -7,6 +11,33 @@ const router = Router();
 /**
  * @swagger
  * /api/tables:
+ *   get:
+ *     summary: Get all tables for the authenticated tenant
+ *     description: Retrieve all tables for the authenticated tenant. Requires tenant authentication.
+ *     tags: [Tables]
+ *     security:
+ *       - tenantAuth: []
+ *     responses:
+ *       200:
+ *         description: List of tables
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Table'
+ *       401:
+ *         description: Unauthorized - Missing or invalid tenant ID
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *   post:
  *     summary: Create a new table
  *     description: Create a new restaurant table for QR code generation. Requires tenant authentication.
@@ -45,7 +76,42 @@ const router = Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
+/**
+ * @swagger
+ * /api/tables/{id}:
+ *   get:
+ *     summary: Get table by ID
+ *     description: Retrieve table information by ID. Public endpoint for guests.
+ *     tags: [Tables]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Table ID
+ *     responses:
+ *       200:
+ *         description: Table information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Table'
+ *       404:
+ *         description: Table not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get("/:id", getTableById);
+router.get("/", authenticateTenant, getTables);
 router.post("/", authenticateTenant, createTable);
 
 export default router;
-

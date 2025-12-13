@@ -52,11 +52,13 @@ app.get("/", (req, res) => {
             public: {
                 "GET /api/store/:slug": "Get restaurant menu",
                 "POST /api/orders": "Create a new order",
+                "GET /api/tables/:id": "Get table by ID (for guests)",
             },
             private: {
                 "POST /api/auth/login": "Tenant login",
                 "POST /api/products": "Create product",
                 "PUT /api/products/:id": "Update product",
+                "GET /api/tables": "Get all tables",
                 "POST /api/tables": "Create table",
                 "PUT /api/orders/:id/status": "Update order status",
             },

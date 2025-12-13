@@ -16,12 +16,21 @@ import { setSocketIO } from "./controllers/orderController";
 // Load environment variables
 dotenv.config();
 
+const ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:3002",
+    "https://app.qrmy.online",
+    "https://qrmy.online",
+    "https://dashboard.qrmy.online",
+];
+
 const app = express();
 const httpServer = createServer(app);
 const io = new SocketIOServer(httpServer, {
     cors: {
-        origin: process.env.FRONTEND_URL || "*",
-        methods: ["GET", "POST"],
+        origin: ALLOWED_ORIGINS,
+        methods: ["GET", "POST", "PUT", "DELETE"],
+        credentials: true,
     },
 });
 

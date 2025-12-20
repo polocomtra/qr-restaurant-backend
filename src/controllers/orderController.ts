@@ -108,7 +108,7 @@ export async function createOrder(req: Request, res: Response) {
  */
 export async function getOrders(req: Request, res: Response) {
     try {
-        const tenant = (req as any).tenant;
+        const tenant = req.tenant!;
 
         const orders = await prisma.order.findMany({
             where: {
@@ -265,7 +265,7 @@ export async function updateOrderStatus(req: Request, res: Response) {
     try {
         const { id } = req.params;
         const { status } = req.body;
-        const tenant = (req as any).tenant;
+        const tenant = req.tenant!;
 
         // Validate status
         const validStatuses = ["PENDING", "CONFIRMED", "DONE", "CANCELLED"];
@@ -296,9 +296,12 @@ export async function updateOrderStatus(req: Request, res: Response) {
             },
         });
 
-        // Emit socket event for order update (for guest tracking)
+        // Emit socket event for order update
         if (io) {
-            io.emit("order_updated", updatedOrder);
+            // Emit to tenant room (for dashboard)
+            io.to(tenant.id).emit("order_updated", updatedOrder);
+            // Also emit to guest room (for order tracking page)
+            io.to(`guest:${tenant.id}`).emit("order_updated", updatedOrder);
         }
 
         res.json(updatedOrder);

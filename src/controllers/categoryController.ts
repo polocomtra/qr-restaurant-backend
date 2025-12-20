@@ -7,7 +7,7 @@ import { prisma } from "../lib/prisma";
  */
 export async function getCategories(req: Request, res: Response) {
     try {
-        const tenant = (req as any).tenant;
+        const tenant = req.tenant!;
 
         const categories = await prisma.category.findMany({
             where: {
@@ -35,7 +35,7 @@ export async function getCategories(req: Request, res: Response) {
 export async function createCategory(req: Request, res: Response) {
     try {
         const { name } = req.body;
-        const tenant = (req as any).tenant;
+        const tenant = req.tenant!;
 
         if (!name || name.trim() === "") {
             return res.status(400).json({ error: "Category name is required" });
@@ -77,7 +77,7 @@ export async function updateCategory(req: Request, res: Response) {
     try {
         const { id } = req.params;
         const { name } = req.body;
-        const tenant = (req as any).tenant;
+        const tenant = req.tenant!;
 
         if (!name || name.trim() === "") {
             return res.status(400).json({ error: "Category name is required" });
@@ -131,7 +131,7 @@ export async function updateCategory(req: Request, res: Response) {
 export async function deleteCategory(req: Request, res: Response) {
     try {
         const { id } = req.params;
-        const tenant = (req as any).tenant;
+        const tenant = req.tenant!;
 
         // Find category and verify it belongs to tenant
         const category = await prisma.category.findFirst({

@@ -7,6 +7,7 @@ import {
     setSocketIO,
 } from "../controllers/tableController";
 import { authenticateTenant } from "../middleware/auth";
+import { validateCreateTable, validateTableId } from "../middleware/validators";
 
 const router = Router();
 
@@ -18,7 +19,7 @@ const router = Router();
  *     description: Retrieve all tables for the authenticated tenant. Requires tenant authentication.
  *     tags: [Tables]
  *     security:
- *       - tenantAuth: []
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: List of tables
@@ -45,7 +46,7 @@ const router = Router();
  *     description: Create a new restaurant table for QR code generation. Requires tenant authentication.
  *     tags: [Tables]
  *     security:
- *       - tenantAuth: []
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -120,7 +121,7 @@ const router = Router();
  *     description: Mark a table as paid. This will emit a socket event to clear user's localStorage. Requires tenant authentication.
  *     tags: [Tables]
  *     security:
- *       - tenantAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -149,10 +150,10 @@ const router = Router();
  *       500:
  *         description: Server error
  */
-router.post("/:id/pay", authenticateTenant, markTableAsPaid);
-router.get("/:id", getTableById);
+router.post("/:id/pay", validateTableId, authenticateTenant, markTableAsPaid);
+router.get("/:id", validateTableId, getTableById);
 router.get("/", authenticateTenant, getTables);
-router.post("/", authenticateTenant, createTable);
+router.post("/", validateCreateTable, authenticateTenant, createTable);
 
 // Export setSocketIO function to be called from index.ts
 export { setSocketIO };

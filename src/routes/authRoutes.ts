@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { login } from "../controllers/authController";
+import { validateLogin } from "../middleware/validators";
 
 const router = Router();
 
@@ -8,7 +9,7 @@ const router = Router();
  * /api/auth/login:
  *   post:
  *     summary: Tenant login
- *     description: Authenticate tenant with slug and password. Returns tenantId and token for use in subsequent requests.
+ *     description: Authenticate tenant with slug and password. Returns JWT token for use in subsequent requests.
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -42,6 +43,6 @@ const router = Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post("/login", login);
+router.post("/login", validateLogin, login);
 
 export default router;

@@ -8,7 +8,7 @@ import { prisma } from "../lib/prisma";
 export async function createProduct(req: Request, res: Response) {
     try {
         const { name, price, imageUrl, isAvailable, categoryId } = req.body;
-        const tenant = (req as any).tenant;
+        const tenant = req.tenant!;
 
         if (!name || !price || !categoryId) {
             return res
@@ -54,7 +54,7 @@ export async function updateProduct(req: Request, res: Response) {
     try {
         const { id } = req.params;
         const { name, price, imageUrl, isAvailable, categoryId } = req.body;
-        const tenant = (req as any).tenant;
+        const tenant = req.tenant!;
 
         // Find product and verify it belongs to tenant
         const product = await prisma.product.findFirst({
@@ -109,7 +109,7 @@ export async function updateProduct(req: Request, res: Response) {
 export async function deleteProduct(req: Request, res: Response) {
     try {
         const { id } = req.params;
-        const tenant = (req as any).tenant;
+        const tenant = req.tenant!;
 
         // Find product and verify it belongs to tenant
         const product = await prisma.product.findFirst({

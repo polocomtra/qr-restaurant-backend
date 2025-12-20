@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { getStoreBySlug } from "../controllers/storeController";
+import { validateStoreSlug } from "../middleware/validators";
 
 const router = Router();
 
@@ -38,6 +39,6 @@ const router = Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get("/:slug", getStoreBySlug);
+router.get("/:slug", validateStoreSlug, getStoreBySlug);
 
 export default router;

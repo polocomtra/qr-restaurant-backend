@@ -15,7 +15,7 @@ export function setSocketIO(server: SocketIOServer) {
  */
 export async function getTables(req: Request, res: Response) {
     try {
-        const tenant = (req as any).tenant;
+        const tenant = req.tenant!;
 
         const tables = await prisma.table.findMany({
             where: {
@@ -65,7 +65,7 @@ export async function getTableById(req: Request, res: Response) {
 export async function createTable(req: Request, res: Response) {
     try {
         const { name } = req.body;
-        const tenant = (req as any).tenant;
+        const tenant = req.tenant!;
 
         if (!name) {
             return res.status(400).json({ error: "Table name is required" });
@@ -93,7 +93,7 @@ export async function createTable(req: Request, res: Response) {
 export async function markTableAsPaid(req: Request, res: Response) {
     try {
         const { id } = req.params;
-        const tenant = (req as any).tenant;
+        const tenant = req.tenant!;
 
         // Find table and verify it belongs to the tenant
         const table = await prisma.table.findFirst({
@@ -107,15 +107,20 @@ export async function markTableAsPaid(req: Request, res: Response) {
             return res.status(404).json({ error: "Table not found" });
         }
 
-        // Emit socket event to all clients in tenant's room
-        // This will notify all users (including guests) to clear their localStorage
-        // if they are currently using this table
+        // Emit socket event to notify about table payment
+        // Send to both tenant room (dashboard) and guest room (customers at this table)
         if (io) {
-            io.to(tenant.id).emit("table_paid", {
+            const tablePayload = {
                 tableId: id,
                 tableName: table.name,
                 tenantId: tenant.id,
-            });
+            };
+
+            // Emit to tenant room (for dashboard)
+            io.to(tenant.id).emit("table_paid", tablePayload);
+            // Also emit to guest room (for customers to clear their localStorage)
+            io.to(`guest:${tenant.id}`).emit("table_paid", tablePayload);
+
             console.log(
                 `Table ${table.name} (${id}) marked as paid. Emitting table_paid event.`
             );

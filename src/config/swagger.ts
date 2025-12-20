@@ -6,7 +6,8 @@ const options: swaggerJsdoc.Options = {
         info: {
             title: "QR Restaurant Backend API",
             version: "1.0.0",
-            description: "Backend API for QR Restaurant Management SaaS - Multi-tenant restaurant menu and order management system",
+            description:
+                "Backend API for QR Restaurant Management SaaS - Multi-tenant restaurant menu and order management system",
             contact: {
                 name: "API Support",
             },
@@ -36,20 +37,22 @@ const options: swaggerJsdoc.Options = {
             },
             {
                 name: "Products",
-                description: "Product management endpoints (requires authentication)",
+                description:
+                    "Product management endpoints (requires authentication)",
             },
             {
                 name: "Tables",
-                description: "Table management endpoints (requires authentication)",
+                description:
+                    "Table management endpoints (requires authentication)",
             },
         ],
         components: {
             securitySchemes: {
-                tenantAuth: {
-                    type: "apiKey",
-                    in: "header",
-                    name: "x-tenant-id",
-                    description: "Tenant ID for authentication (obtained from login endpoint)",
+                bearerAuth: {
+                    type: "http",
+                    scheme: "bearer",
+                    bearerFormat: "JWT",
+                    description: "JWT token obtained from login endpoint",
                 },
             },
             schemas: {
@@ -88,7 +91,10 @@ const options: swaggerJsdoc.Options = {
                     properties: {
                         id: { type: "string", format: "uuid" },
                         name: { type: "string" },
-                        price: { type: "integer", description: "Price in cents" },
+                        price: {
+                            type: "integer",
+                            description: "Price in cents",
+                        },
                         imageUrl: { type: "string", nullable: true },
                         isAvailable: { type: "boolean" },
                         categoryId: { type: "string", format: "uuid" },
@@ -104,7 +110,9 @@ const options: swaggerJsdoc.Options = {
                             properties: {
                                 categories: {
                                     type: "array",
-                                    items: { $ref: "#/components/schemas/Category" },
+                                    items: {
+                                        $ref: "#/components/schemas/Category",
+                                    },
                                 },
                             },
                         },
@@ -117,7 +125,10 @@ const options: swaggerJsdoc.Options = {
                         orderId: { type: "string", format: "uuid" },
                         productName: { type: "string" },
                         quantity: { type: "integer" },
-                        price: { type: "integer", description: "Price in cents" },
+                        price: {
+                            type: "integer",
+                            description: "Price in cents",
+                        },
                         note: { type: "string", nullable: true },
                     },
                 },
@@ -131,7 +142,10 @@ const options: swaggerJsdoc.Options = {
                             type: "string",
                             enum: ["PENDING", "CONFIRMED", "DONE", "CANCELLED"],
                         },
-                        total: { type: "integer", description: "Total price in cents" },
+                        total: {
+                            type: "integer",
+                            description: "Total price in cents",
+                        },
                         items: {
                             type: "array",
                             items: { $ref: "#/components/schemas/OrderItem" },
@@ -159,7 +173,15 @@ const options: swaggerJsdoc.Options = {
                     type: "object",
                     properties: {
                         tenantId: { type: "string", format: "uuid" },
-                        token: { type: "string", description: "Tenant ID (used as token for MVP)" },
+                        token: {
+                            type: "string",
+                            description: "JWT token for API authentication",
+                        },
+                        expiresIn: {
+                            type: "string",
+                            description: "Token expiration time",
+                            example: "24h",
+                        },
                     },
                 },
                 CreateOrderRequest: {
@@ -174,14 +196,23 @@ const options: swaggerJsdoc.Options = {
                                 type: "object",
                                 required: ["productId", "quantity", "price"],
                                 properties: {
-                                    productId: { type: "string", format: "uuid" },
+                                    productId: {
+                                        type: "string",
+                                        format: "uuid",
+                                    },
                                     quantity: { type: "integer", minimum: 1 },
-                                    price: { type: "integer", description: "Price in cents" },
+                                    price: {
+                                        type: "integer",
+                                        description: "Price in cents",
+                                    },
                                     note: { type: "string", nullable: true },
                                 },
                             },
                         },
-                        total: { type: "integer", description: "Total price in cents" },
+                        total: {
+                            type: "integer",
+                            description: "Total price in cents",
+                        },
                     },
                 },
                 CreateProductRequest: {
@@ -189,7 +220,10 @@ const options: swaggerJsdoc.Options = {
                     required: ["name", "price", "categoryId"],
                     properties: {
                         name: { type: "string" },
-                        price: { type: "integer", description: "Price in cents" },
+                        price: {
+                            type: "integer",
+                            description: "Price in cents",
+                        },
                         categoryId: { type: "string", format: "uuid" },
                         imageUrl: { type: "string", nullable: true },
                         isAvailable: { type: "boolean", default: true },
@@ -199,7 +233,10 @@ const options: swaggerJsdoc.Options = {
                     type: "object",
                     properties: {
                         name: { type: "string" },
-                        price: { type: "integer", description: "Price in cents" },
+                        price: {
+                            type: "integer",
+                            description: "Price in cents",
+                        },
                         categoryId: { type: "string", format: "uuid" },
                         imageUrl: { type: "string", nullable: true },
                         isAvailable: { type: "boolean" },
@@ -229,4 +266,3 @@ const options: swaggerJsdoc.Options = {
 };
 
 export const swaggerSpec = swaggerJsdoc(options);
-

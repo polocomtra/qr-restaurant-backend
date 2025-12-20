@@ -6,6 +6,11 @@ import {
     deleteCategory,
 } from "../controllers/categoryController";
 import { authenticateTenant } from "../middleware/auth";
+import {
+    validateCreateCategory,
+    validateUpdateCategory,
+    validateCategoryId,
+} from "../middleware/validators";
 
 const router = Router();
 
@@ -17,7 +22,7 @@ const router = Router();
  *     description: Retrieve all categories for the authenticated tenant. Requires tenant authentication.
  *     tags: [Categories]
  *     security:
- *       - tenantAuth: []
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: List of categories
@@ -50,7 +55,7 @@ router.get("/", authenticateTenant, getCategories);
  *     description: Create a new menu category. Requires tenant authentication.
  *     tags: [Categories]
  *     security:
- *       - tenantAuth: []
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -90,7 +95,7 @@ router.get("/", authenticateTenant, getCategories);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post("/", authenticateTenant, createCategory);
+router.post("/", validateCreateCategory, authenticateTenant, createCategory);
 
 /**
  * @swagger
@@ -100,7 +105,7 @@ router.post("/", authenticateTenant, createCategory);
  *     description: Update category name. Requires tenant authentication.
  *     tags: [Categories]
  *     security:
- *       - tenantAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -154,7 +159,7 @@ router.post("/", authenticateTenant, createCategory);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.put("/:id", authenticateTenant, updateCategory);
+router.put("/:id", validateUpdateCategory, authenticateTenant, updateCategory);
 
 /**
  * @swagger
@@ -164,7 +169,7 @@ router.put("/:id", authenticateTenant, updateCategory);
  *     description: Delete a category. Cannot delete if category has products. Requires tenant authentication.
  *     tags: [Categories]
  *     security:
- *       - tenantAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -201,6 +206,6 @@ router.put("/:id", authenticateTenant, updateCategory);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.delete("/:id", authenticateTenant, deleteCategory);
+router.delete("/:id", validateCategoryId, authenticateTenant, deleteCategory);
 
 export default router;

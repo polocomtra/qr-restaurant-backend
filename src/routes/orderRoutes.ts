@@ -7,6 +7,13 @@ import {
     addItemsToOrder,
 } from "../controllers/orderController";
 import { authenticateTenant } from "../middleware/auth";
+import {
+    validateCreateOrder,
+    validateAddItemsToOrder,
+    validateUpdateOrderStatus,
+    validateOrderId,
+} from "../middleware/validators";
+import { orderLimiter } from "../middleware/rateLimiter";
 
 const router = Router();
 
@@ -49,7 +56,7 @@ const router = Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post("/", createOrder);
+router.post("/", orderLimiter, validateCreateOrder, createOrder);
 
 /**
  * @swagger
@@ -140,8 +147,8 @@ router.post("/", createOrder);
  *       500:
  *         description: Server error
  */
-router.post("/:id/items", addItemsToOrder);
-router.get("/:id", getOrderById);
+router.post("/:id/items", validateAddItemsToOrder, addItemsToOrder);
+router.get("/:id", validateOrderId, getOrderById);
 
 /**
  * @swagger
@@ -151,7 +158,7 @@ router.get("/:id", getOrderById);
  *     description: Retrieve all orders for the authenticated tenant. Requires tenant authentication.
  *     tags: [Orders]
  *     security:
- *       - tenantAuth: []
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: List of orders
@@ -184,7 +191,7 @@ router.get("/", authenticateTenant, getOrders);
  *     description: Update the status of an order. Requires tenant authentication.
  *     tags: [Orders]
  *     security:
- *       - tenantAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -231,6 +238,11 @@ router.get("/", authenticateTenant, getOrders);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.put("/:id/status", authenticateTenant, updateOrderStatus);
+router.put(
+    "/:id/status",
+    validateUpdateOrderStatus,
+    authenticateTenant,
+    updateOrderStatus
+);
 
 export default router;

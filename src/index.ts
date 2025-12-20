@@ -1,10 +1,16 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import dotenv from "dotenv";
 import { createServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger";
+import { apiLimiter, authLimiter } from "./middleware/rateLimiter";
+import {
+    socketAuthMiddleware,
+    validateTenantId,
+} from "./middleware/socketAuth";
 import storeRoutes from "./routes/storeRoutes";
 import orderRoutes from "./routes/orderRoutes";
 import authRoutes from "./routes/authRoutes";
@@ -16,13 +22,16 @@ import { setSocketIO } from "./controllers/orderController";
 // Load environment variables
 dotenv.config();
 
-const ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:3002",
-    "https://app.qrmy.online",
-    "https://qrmy.online",
-    "https://dashboard.qrmy.online",
-];
+// Allowed origins for CORS - load from env or use defaults
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(",")
+    : [
+          "http://localhost:3000",
+          "http://localhost:3002",
+          "https://app.qrmy.online",
+          "https://qrmy.online",
+          "https://dashboard.qrmy.online",
+      ];
 
 const app = express();
 const httpServer = createServer(app);
@@ -36,10 +45,36 @@ const io = new SocketIOServer(httpServer, {
 
 const PORT = process.env.PORT || 3001;
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Security middleware
+app.use(helmet());
+
+// CORS configuration - use allowed origins
+app.use(
+    cors({
+        origin: (origin, callback) => {
+            // Allow requests with no origin (mobile apps, curl, etc.)
+            if (!origin) {
+                return callback(null, true);
+            }
+
+            if (ALLOWED_ORIGINS.includes(origin)) {
+                callback(null, true);
+            } else {
+                callback(new Error("Not allowed by CORS"));
+            }
+        },
+        credentials: true,
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "Authorization"],
+    })
+);
+
+// Body parsing middleware
+app.use(express.json({ limit: "10kb" })); // Limit body size
+app.use(express.urlencoded({ extended: true, limit: "10kb" }));
+
+// Apply rate limiting to all API routes
+app.use("/api", apiLimiter);
 
 // Root endpoint
 app.get("/", (req, res) => {
@@ -70,7 +105,10 @@ app.get("/", (req, res) => {
         },
         socket: {
             events: {
-                join_room: "Join tenant room for order notifications",
+                join_room:
+                    "Join tenant room for order notifications (requires JWT)",
+                join_guest_room:
+                    "Join guest room for order tracking (no auth required)",
                 new_order: "Receive new order notifications",
                 order_updated: "Receive order status updates",
                 table_paid:
@@ -98,7 +136,7 @@ app.use(
 // API Routes
 app.use("/api/store", storeRoutes);
 app.use("/api/orders", orderRoutes);
-app.use("/api/auth", authRoutes);
+app.use("/api/auth", authLimiter, authRoutes); // Stricter rate limit for auth
 app.use("/api/products", productRoutes);
 app.use("/api/tables", tableRoutes);
 app.use("/api/categories", categoryRoutes);
@@ -108,20 +146,64 @@ import { setSocketIO as setTableSocketIO } from "./routes/tableRoutes";
 setSocketIO(io);
 setTableSocketIO(io);
 
+// Socket.io authentication middleware
+io.use(socketAuthMiddleware);
+
 // Socket.io connection handling
 io.on("connection", (socket) => {
-    console.log("Client connected:", socket.id);
+    const isAuthenticated = socket.data.authenticated;
+    const isGuest = socket.data.isGuest;
 
-    // Handle tenant joining their room
-    socket.on("join_room", (tenantId: string) => {
-        if (tenantId) {
-            socket.join(tenantId);
-            console.log(`Client ${socket.id} joined room: ${tenantId}`);
+    console.log(
+        `Client connected: ${socket.id} (${
+            isAuthenticated ? "authenticated" : "guest"
+        })`
+    );
+
+    // Handle tenant joining their room (authenticated users only)
+    socket.on("join_room", async (tenantId: string) => {
+        // Only authenticated users can join tenant rooms
+        if (!isAuthenticated) {
+            socket.emit("error", {
+                message: "Authentication required to join tenant room",
+            });
+            return;
         }
+
+        // Verify the user is joining their own tenant room
+        if (socket.data.tenantId !== tenantId) {
+            socket.emit("error", {
+                message: "Cannot join another tenant's room",
+            });
+            return;
+        }
+
+        socket.join(tenantId);
+        console.log(
+            `Client ${socket.id} joined room: ${tenantId} (authenticated)`
+        );
+    });
+
+    // Handle guest joining for order tracking (limited access)
+    socket.on("join_guest_room", async (tenantId: string) => {
+        // Validate tenantId exists
+        const isValid = await validateTenantId(tenantId);
+
+        if (!isValid) {
+            socket.emit("error", { message: "Invalid tenant" });
+            return;
+        }
+
+        // Guests join a separate guest room for that tenant
+        // They can receive order updates but not tenant-specific notifications
+        socket.join(`guest:${tenantId}`);
+        console.log(
+            `Guest ${socket.id} joined guest room for tenant: ${tenantId}`
+        );
     });
 
     socket.on("disconnect", () => {
-        console.log("Client disconnected:", socket.id);
+        console.log(`Client disconnected: ${socket.id}`);
     });
 });
 

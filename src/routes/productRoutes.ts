@@ -5,6 +5,11 @@ import {
     deleteProduct,
 } from "../controllers/productController";
 import { authenticateTenant } from "../middleware/auth";
+import {
+    validateCreateProduct,
+    validateUpdateProduct,
+    validateProductId,
+} from "../middleware/validators";
 
 const router = Router();
 
@@ -16,7 +21,7 @@ const router = Router();
  *     description: Create a new menu product. Requires tenant authentication.
  *     tags: [Products]
  *     security:
- *       - tenantAuth: []
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -55,7 +60,7 @@ const router = Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post("/", authenticateTenant, createProduct);
+router.post("/", validateCreateProduct, authenticateTenant, createProduct);
 
 /**
  * @swagger
@@ -65,7 +70,7 @@ router.post("/", authenticateTenant, createProduct);
  *     description: Update product details (name, price, availability, etc.). Requires tenant authentication.
  *     tags: [Products]
  *     security:
- *       - tenantAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -106,7 +111,7 @@ router.post("/", authenticateTenant, createProduct);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.put("/:id", authenticateTenant, updateProduct);
+router.put("/:id", validateUpdateProduct, authenticateTenant, updateProduct);
 
 /**
  * @swagger
@@ -116,7 +121,7 @@ router.put("/:id", authenticateTenant, updateProduct);
  *     description: Delete a product. Requires tenant authentication.
  *     tags: [Products]
  *     security:
- *       - tenantAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -135,6 +140,6 @@ router.put("/:id", authenticateTenant, updateProduct);
  *       500:
  *         description: Server error
  */
-router.delete("/:id", authenticateTenant, deleteProduct);
+router.delete("/:id", validateProductId, authenticateTenant, deleteProduct);
 
 export default router;

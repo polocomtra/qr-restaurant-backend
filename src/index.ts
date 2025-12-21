@@ -30,7 +30,7 @@ const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
           "http://localhost:3002",
           "https://app.qrmy.online",
           "https://qrmy.online",
-          "https://dashboard.qrmy.online",
+          "https://admin.qrmy.online",
       ];
 
 const app = express();

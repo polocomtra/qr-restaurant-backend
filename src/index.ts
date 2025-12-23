@@ -17,6 +17,7 @@ import authRoutes from "./routes/authRoutes";
 import productRoutes from "./routes/productRoutes";
 import tableRoutes from "./routes/tableRoutes";
 import categoryRoutes from "./routes/categoryRoutes";
+import brandingRoutes from "./routes/brandingRoutes";
 import { setSocketIO } from "./controllers/orderController";
 
 // Load environment variables
@@ -101,6 +102,8 @@ app.get("/", (req, res) => {
                 "POST /api/tables/:id/pay":
                     "Mark table as paid (reset for next customer)",
                 "PUT /api/orders/:id/status": "Update order status",
+                "GET /api/tenant/branding": "Get tenant branding",
+                "PUT /api/tenant/branding": "Update tenant branding",
             },
         },
         socket: {
@@ -140,6 +143,7 @@ app.use("/api/auth", authLimiter, authRoutes); // Stricter rate limit for auth
 app.use("/api/products", productRoutes);
 app.use("/api/tables", tableRoutes);
 app.use("/api/categories", categoryRoutes);
+app.use("/api/tenant/branding", brandingRoutes); // Branding management
 
 // Set socket.io instance for controllers
 import { setSocketIO as setTableSocketIO } from "./routes/tableRoutes";

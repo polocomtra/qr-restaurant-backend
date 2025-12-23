@@ -22,6 +22,12 @@ model Tenant {
   slug      String     @unique // Identify restaurant in URL
   password  String     // Simple auth for MVP
   createdAt DateTime   @default(now())
+  
+  // Branding (optional - null means use default theme)
+  logoUrl        String?
+  primaryColor   String?   // Default: #9333ea (purple)
+  secondaryColor String?   // Default: #f97316 (orange)
+  
   categories Category[]
   products   Product[]
   orders     Order[]

@@ -4,6 +4,7 @@ import {
     createTable,
     getTableById,
     markTableAsPaid,
+    updateTableStatus,
     setSocketIO,
 } from "../controllers/tableController";
 import { authenticateTenant } from "../middleware/auth";
@@ -115,10 +116,61 @@ const router = Router();
  */
 /**
  * @swagger
+ * /api/tables/{id}/status:
+ *   put:
+ *     summary: Update table status (LOCKED/ACTIVE)
+ *     description: Update the activation status of a table. Requires tenant authentication.
+ *     tags: [Tables]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Table ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [LOCKED, ACTIVE]
+ *             required:
+ *               - status
+ *     responses:
+ *       200:
+ *         description: Table status updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 table:
+ *                   $ref: '#/components/schemas/Table'
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Invalid status value
+ *       404:
+ *         description: Table not found
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+/**
+ * @swagger
  * /api/tables/{id}/pay:
  *   post:
  *     summary: Mark table as paid and reset for next customer
- *     description: Mark a table as paid. This will emit a socket event to clear user's localStorage. Requires tenant authentication.
+ *     description: Mark a table as paid. This will emit a socket event to clear user's localStorage and lock the table. Requires tenant authentication.
  *     tags: [Tables]
  *     security:
  *       - bearerAuth: []
@@ -150,6 +202,12 @@ const router = Router();
  *       500:
  *         description: Server error
  */
+router.put(
+    "/:id/status",
+    validateTableId,
+    authenticateTenant,
+    updateTableStatus
+);
 router.post("/:id/pay", validateTableId, authenticateTenant, markTableAsPaid);
 router.get("/:id", validateTableId, getTableById);
 router.get("/", authenticateTenant, getTables);

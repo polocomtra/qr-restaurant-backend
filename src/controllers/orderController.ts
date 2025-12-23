@@ -15,7 +15,7 @@ export function setSocketIO(server: SocketIOServer) {
  */
 export async function createOrder(req: Request, res: Response) {
     try {
-        const { tenantId, tableName, items, total } = req.body;
+        const { tenantId, tableName, items, total, tableId } = req.body;
 
         // Validate required fields
         if (
@@ -27,6 +27,29 @@ export async function createOrder(req: Request, res: Response) {
             !total
         ) {
             return res.status(400).json({ error: "Missing required fields" });
+        }
+
+        // Check table status if tableId is provided
+        if (tableId) {
+            const table = await prisma.table.findUnique({
+                where: { id: tableId },
+            });
+
+            if (!table) {
+                return res.status(404).json({
+                    error: "Table not found",
+                });
+            }
+
+            // Only allow orders when table is ACTIVE
+            if (table.status !== "ACTIVE") {
+                return res.status(403).json({
+                    error: "TABLE_LOCKED",
+                    message:
+                        "Bàn chưa được kích hoạt. Vui lòng đợi nhân viên hỗ trợ.",
+                    tableStatus: table.status,
+                });
+            }
         }
 
         // Validate tenant exists

@@ -11,6 +11,11 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+enum TableStatus {
+  LOCKED
+  ACTIVE
+}
+
 model Tenant {
   id        String     @id @default(uuid())
   name      String
@@ -24,10 +29,11 @@ model Tenant {
 }
 
 model Table {
-  id        String   @id @default(uuid())
-  name      String   // e.g., "Table 1"
+  id        String      @id @default(uuid())
+  name      String      // e.g., "Table 1"
+  status    TableStatus @default(LOCKED) // Table activation status
   tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant    Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 }
 
 model Category {

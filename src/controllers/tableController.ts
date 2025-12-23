@@ -86,9 +86,74 @@ export async function createTable(req: Request, res: Response) {
 }
 
 /**
+ * Update table status (LOCKED/ACTIVE)
+ * Private endpoint for merchants
+ */
+export async function updateTableStatus(req: Request, res: Response) {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+        const tenant = req.tenant!;
+
+        // Validate status
+        const validStatuses = ["LOCKED", "ACTIVE"];
+        if (!status || !validStatuses.includes(status)) {
+            return res.status(400).json({
+                error: "Invalid status. Must be LOCKED or ACTIVE",
+            });
+        }
+
+        // Find table and verify ownership
+        const table = await prisma.table.findFirst({
+            where: {
+                id,
+                tenantId: tenant.id,
+            },
+        });
+
+        if (!table) {
+            return res.status(404).json({ error: "Table not found" });
+        }
+
+        // Update status
+        const updatedTable = await prisma.table.update({
+            where: { id },
+            data: { status },
+        });
+
+        // Emit Socket.io event for real-time update
+        if (io) {
+            const payload = {
+                tableId: id,
+                tableName: table.name,
+                status: status,
+                tenantId: tenant.id,
+            };
+
+            // Emit to tenant room (dashboard)
+            io.to(tenant.id).emit("table_status_changed", payload);
+
+            // Emit to guest room (customers at this table)
+            io.to(`guest:${tenant.id}`).emit("table_status_changed", payload);
+
+            console.log(`Table ${table.name} status changed to ${status}`);
+        }
+
+        res.json({
+            success: true,
+            table: updatedTable,
+            message: `Table ${table.name} is now ${status.toLowerCase()}`,
+        });
+    } catch (error) {
+        console.error("Error updating table status:", error);
+        res.status(500).json({ error: "Failed to update table status" });
+    }
+}
+
+/**
  * Mark table as paid and reset for next customer
  * Private endpoint for merchants
- * This will emit a socket event to clear user's localStorage
+ * This will emit a socket event to clear user's localStorage and lock the table
  */
 export async function markTableAsPaid(req: Request, res: Response) {
     try {
@@ -107,13 +172,20 @@ export async function markTableAsPaid(req: Request, res: Response) {
             return res.status(404).json({ error: "Table not found" });
         }
 
-        // Emit socket event to notify about table payment
+        // Reset status to LOCKED when payment is made
+        const updatedTable = await prisma.table.update({
+            where: { id },
+            data: { status: "LOCKED" },
+        });
+
+        // Emit socket event to notify about table payment and status change
         // Send to both tenant room (dashboard) and guest room (customers at this table)
         if (io) {
             const tablePayload = {
                 tableId: id,
                 tableName: table.name,
                 tenantId: tenant.id,
+                status: "LOCKED",
             };
 
             // Emit to tenant room (for dashboard)
@@ -121,15 +193,23 @@ export async function markTableAsPaid(req: Request, res: Response) {
             // Also emit to guest room (for customers to clear their localStorage)
             io.to(`guest:${tenant.id}`).emit("table_paid", tablePayload);
 
+            // Emit table_status_changed to update UI
+            io.to(tenant.id).emit("table_status_changed", tablePayload);
+            io.to(`guest:${tenant.id}`).emit(
+                "table_status_changed",
+                tablePayload
+            );
+
             console.log(
-                `Table ${table.name} (${id}) marked as paid. Emitting table_paid event.`
+                `Table ${table.name} (${id}) marked as paid and locked. Emitting events.`
             );
         }
 
         res.json({
             success: true,
-            message: `Table ${table.name} has been marked as paid`,
+            message: `Table ${table.name} has been marked as paid and locked`,
             tableId: id,
+            table: updatedTable,
         });
     } catch (error) {
         console.error("Error marking table as paid:", error);
